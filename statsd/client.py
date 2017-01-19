@@ -134,16 +134,25 @@ class StatsClient(StatsClientBase):
     def __init__(self, host='localhost', port=8125, prefix=None,
                  maxudpsize=512, ipv6=False):
         """Create a new client."""
-        fam = socket.AF_INET6 if ipv6 else socket.AF_INET
-        family, _, _, _, addr = socket.getaddrinfo(
-            host, port, fam, socket.SOCK_DGRAM)[0]
-        self._addr = addr
-        self._sock = socket.socket(family, socket.SOCK_DGRAM)
+        self._host = host
+        self._port = port
+        self._ipv6 = ipv6
+        self._addr = None
+        self._sock = None
         self._prefix = prefix
         self._maxudpsize = maxudpsize
 
+    def _resolve(self):
+        fam = socket.AF_INET6 if self._ipv6 else socket.AF_INET
+        family, _, _, _, addr = socket.getaddrinfo(
+            self._host, self._port, fam, socket.SOCK_DGRAM)[0]
+        self._addr = addr
+        self._sock = socket.socket(family, socket.SOCK_DGRAM)
+
     def _send(self, data):
         """Send data to statsd."""
+        if not self._sock:
+            self._resolve()
         try:
             self._sock.sendto(data.encode('ascii'), self._addr)
         except (socket.error, RuntimeError):
