@@ -157,7 +157,8 @@ class StatsClient(StatsClientBase):
             self._sock.sendto(data.encode('ascii'), self._addr)
         except (socket.error, RuntimeError):
             # No time for love, Dr. Jones!
-            pass
+            self._addr = None
+            self._sock = None
 
     def pipeline(self):
         return Pipeline(self)
